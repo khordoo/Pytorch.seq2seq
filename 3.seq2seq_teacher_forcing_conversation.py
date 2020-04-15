@@ -103,11 +103,11 @@ class TrainingSession:
         self.teacher_enforce_prob = teacher_enforce_prob
         self.start_token_index = self.tokenizer.start_token_index
 
-    def train(self, sources, targets, num_epoc=100):
+    def train(self, sources, targets, epochs=100):
         encoder_optimizer = torch.optim.Adam(self.encoder.parameters(), lr=self.learning_rate)
         decoder_optimizer = torch.optim.Adam(self.decoder.parameters(), lr=self.learning_rate)
 
-        for epoc in range(num_epoc):
+        for epoch in range(epochs):
             encoder_optimizer.zero_grad()
             decoder_optimizer.zero_grad()
             for source, target in zip(sources, targets):
@@ -138,8 +138,8 @@ class TrainingSession:
                 loss.backward()
                 encoder_optimizer.step()
                 decoder_optimizer.step()
-                if epoc % 5 == 0:
-                    print(f'epoc:{epoc}, loss: {loss.item()}')
+                if epoch % 5 == 0:
+                    print(f'Epoch:{epoch}, Loss: {loss.item():.5f}')
                     print(self.tokenizer.indexes_to_text(source))
                     print(self.tokenizer.indexes_to_text(predicted_indexes))
 
@@ -156,4 +156,4 @@ decoder = DecoderLSTM(input_size=tokenizer.words_count, hidden_size=HIDDEN_SIZE,
 trainer = TrainingSession(encoder=encoder, decoder=decoder, tokenizer=tokenizer, learning_rate=LEARNING_RATE,
                           teacher_enforce_prob=TEACHER_ENFORCE_PROB,
                           device=DEVICE)
-trainer.train(sources, targets, num_epoc=15)
+trainer.train(sources, targets, epochs=15)
