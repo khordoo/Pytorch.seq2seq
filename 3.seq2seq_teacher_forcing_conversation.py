@@ -45,12 +45,12 @@ class DecoderRNN(nn.Module):
     def forward(self, x, hidden_states):
         x = self.emb(x)
         out, hidden_states = self.lstm(x, hidden_states)
-        out_lin = self.linear(out)
-        return out_lin, hidden_states
+        out = self.linear(out)
+        return out, hidden_states
 
 
 class Tokenizer:
-    """Converts Text to numerical representation"""
+    """Converts Text into its numerical representation"""
 
     def __init__(self):
         self.START_TOKEN = '<sos>'
@@ -64,7 +64,8 @@ class Tokenizer:
             self._add_sentence(sentence)
 
     def _add_sentence(self, sentence):
-        """Adds and indexes every individual word in the sentences to the dictionary"""
+        """Creates indexes for unique word in the sentences and
+        adds them to the dictionary"""
         for word in sentence.strip().lower().split(' '):
             if word not in self.word2index:
                 self.word2index[word] = self.words_count
@@ -72,8 +73,7 @@ class Tokenizer:
                 self.words_count += 1
 
     def texts_to_index(self, sentences):
-        """Convert words in sentences to their numerical index values
-               """
+        """Convert words in sentences to their numerical index values"""
         sentences_index = []
         for sentence in sentences:
             sentences_index.append([
@@ -101,14 +101,16 @@ class TrainingSession:
         self.device = device
         self.learning_rate = learning_rate
         self.teacher_enforce_prob = teacher_enforce_prob
-        self.start_of_sentence_index = self.tokenizer.start_token_index
+        self.start_token_index = self.tokenizer.start_token_index
 
     def train(self, sources, targets, num_epoc=100):
         encoder_optimizer = torch.optim.Adam(self.encoder.parameters(), lr=self.learning_rate)
         decoder_optimizer = torch.optim.Adam(self.decoder.parameters(), lr=self.learning_rate)
+
         for epoc in range(num_epoc):
             encoder_optimizer.zero_grad()
             decoder_optimizer.zero_grad()
+
             for source, target in zip(sources, targets):
                 # LSTM has two internal states (h,c)
                 encoder_hidden = (torch.zeros(1, 1, self.encoder.hidden_size).to(self.device),
@@ -120,7 +122,7 @@ class TrainingSession:
                     encoder_out, encoder_hidden = self.encoder(encoder_input, encoder_hidden)
 
                 decoder_hidden = encoder_hidden
-                decoder_input = torch.LongTensor([[self.start_of_sentence_index]]).to(self.device)
+                decoder_input = torch.LongTensor([[self.start_token_index]]).to(self.device)
                 predicted_indexes = []
                 for target_idx in target:
                     decoder_out, decoder_hidden = self.decoder(decoder_input, decoder_hidden)
