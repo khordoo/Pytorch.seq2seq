@@ -16,11 +16,11 @@ conversation_pair = [
 ]
 
 
-class EncoderRNN(nn.Module):
+class EncoderLSTM(nn.Module):
     """Simple RNN module with word embeddings"""
 
     def __init__(self, input_size, hidden_size, embeddings_dims):
-        super(EncoderRNN, self).__init__()
+        super(EncoderLSTM, self).__init__()
         self.hidden_size = hidden_size
         self.emb = nn.Embedding(num_embeddings=input_size, embedding_dim=embeddings_dims)
         self.lstm = nn.LSTM(input_size=embeddings_dims, hidden_size=hidden_size, num_layers=1, batch_first=True)
@@ -31,13 +31,13 @@ class EncoderRNN(nn.Module):
         return out, hidden_states
 
 
-class DecoderRNN(nn.Module):
+class DecoderLSTM(nn.Module):
     """Simple decoder class with embedding and a linear layer to project the out put of
        the LSTM to a vocabulary size dimension.  n_hidden_size -> number_vocabulary
     """
 
     def __init__(self, input_size, hidden_size, embeddings_dims, vocab_size):
-        super(DecoderRNN, self).__init__()
+        super(DecoderLSTM, self).__init__()
         self.emb = nn.Embedding(num_embeddings=input_size, embedding_dim=embeddings_dims)
         self.lstm = nn.LSTM(input_size=embeddings_dims, hidden_size=hidden_size, num_layers=1, batch_first=True)
         self.linear = nn.Linear(in_features=hidden_size, out_features=vocab_size)
@@ -133,7 +133,7 @@ class TrainingSession:
                         decoder_input = predicted_target
 
                     loss += F.cross_entropy(decoder_out.squeeze(0), actual_target.flatten())
-                    predicted_indexes.append(decoder_out.argmax(dim=2).item())
+                    predicted_indexes.append(predicted_target.item())
 
                 loss.backward()
                 encoder_optimizer.step()
@@ -149,10 +149,10 @@ tokenizer = Tokenizer()
 tokenizer.fit_on_text(sources + targets)
 sources = tokenizer.texts_to_index(sources)
 targets = tokenizer.texts_to_index(targets)
-encoder = EncoderRNN(input_size=tokenizer.words_count, hidden_size=HIDDEN_SIZE, embeddings_dims=EMBEDDINGS_DIMS).to(
+encoder = EncoderLSTM(input_size=tokenizer.words_count, hidden_size=HIDDEN_SIZE, embeddings_dims=EMBEDDINGS_DIMS).to(
     DEVICE)
-decoder = DecoderRNN(input_size=tokenizer.words_count, hidden_size=HIDDEN_SIZE, embeddings_dims=EMBEDDINGS_DIMS,
-                     vocab_size=tokenizer.words_count).to(DEVICE)
+decoder = DecoderLSTM(input_size=tokenizer.words_count, hidden_size=HIDDEN_SIZE, embeddings_dims=EMBEDDINGS_DIMS,
+                      vocab_size=tokenizer.words_count).to(DEVICE)
 trainer = TrainingSession(encoder=encoder, decoder=decoder, tokenizer=tokenizer, learning_rate=LEARNING_RATE,
                           teacher_enforce_prob=TEACHER_ENFORCE_PROB,
                           device=DEVICE)
