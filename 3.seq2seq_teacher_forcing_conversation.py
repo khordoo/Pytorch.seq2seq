@@ -5,9 +5,9 @@ import numpy as np
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 LEARNING_RATE = 0.01
-HIDDEN_SIZE = 100
+LSTM_HIDDEN_SIZE = 100
 EMBEDDINGS_DIMS = 50
-TEACHER_ENFORCE_PROB = 0.5
+TEACHER_FORCING_PROB = 0.5
 conversation_pair = [
     ['Hi how are you?', 'I am good ,thank you.'],
     ['How was your day?', 'It was a fantastic day'],
@@ -127,6 +127,7 @@ class TrainingSession:
                     decoder_out, decoder_hidden = self.decoder(decoder_input, decoder_hidden)
                     predicted_target = decoder_out.argmax(dim=2)
                     actual_target = torch.LongTensor([[target_idx]]).to(self.device)
+                    # teacher forcing
                     if np.random.random() < self.teacher_enforce_prob:
                         decoder_input = actual_target
                     else:
@@ -144,16 +145,17 @@ class TrainingSession:
                     print(self.tokenizer.indexes_to_text(predicted_indexes))
 
 
-sources, targets = zip(*conversation_pair)
 tokenizer = Tokenizer()
+sources, targets = zip(*conversation_pair)
 tokenizer.fit_on_text(sources + targets)
 sources = tokenizer.texts_to_index(sources)
 targets = tokenizer.texts_to_index(targets)
-encoder = EncoderLSTM(input_size=tokenizer.words_count, hidden_size=HIDDEN_SIZE, embeddings_dims=EMBEDDINGS_DIMS).to(
+encoder = EncoderLSTM(input_size=tokenizer.words_count, hidden_size=LSTM_HIDDEN_SIZE,
+                      embeddings_dims=EMBEDDINGS_DIMS).to(
     DEVICE)
-decoder = DecoderLSTM(input_size=tokenizer.words_count, hidden_size=HIDDEN_SIZE, embeddings_dims=EMBEDDINGS_DIMS,
+decoder = DecoderLSTM(input_size=tokenizer.words_count, hidden_size=LSTM_HIDDEN_SIZE, embeddings_dims=EMBEDDINGS_DIMS,
                       vocab_size=tokenizer.words_count).to(DEVICE)
 trainer = TrainingSession(encoder=encoder, decoder=decoder, tokenizer=tokenizer, learning_rate=LEARNING_RATE,
-                          teacher_enforce_prob=TEACHER_ENFORCE_PROB,
+                          teacher_enforce_prob=TEACHER_FORCING_PROB,
                           device=DEVICE)
 trainer.train(sources, targets, epochs=15)
