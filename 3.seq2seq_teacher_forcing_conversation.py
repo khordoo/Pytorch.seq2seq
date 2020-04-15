@@ -92,7 +92,7 @@ class Tokenizer:
 
 
 class TrainingSession:
-    """Simply runs the training job"""
+    """A container class that runs the training job"""
 
     def __init__(self, encoder, decoder, tokenizer, device, learning_rate, teacher_enforce_prob):
         self.encoder = encoder
@@ -110,12 +110,11 @@ class TrainingSession:
         for epoc in range(num_epoc):
             encoder_optimizer.zero_grad()
             decoder_optimizer.zero_grad()
-
             for source, target in zip(sources, targets):
+                loss = 0
                 # LSTM has two internal states (h,c)
                 encoder_hidden = (torch.zeros(1, 1, self.encoder.hidden_size).to(self.device),
                                   torch.zeros(1, 1, self.encoder.hidden_size).to(self.device))
-                loss = 0
 
                 for word_idx in source:
                     encoder_input = torch.LongTensor([[word_idx]]).to(self.device)
