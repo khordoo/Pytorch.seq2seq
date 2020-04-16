@@ -78,7 +78,11 @@ class Tokenizer:
                 self.words_count += 1
 
     def texts_to_index(self, sentences):
-        """Convert words in sentences to their numerical index values"""
+        """Convert words in sentences to their numerical index values,
+           cuts extra element from lon sequences and 
+           adds padding to make make short sentence length euqal to the
+           maximum length.
+        """
         sentences_index = []
         end_token_index = self.word2index[self.END_TOKEN]
         for sentence in sentences:
@@ -101,7 +105,9 @@ class Tokenizer:
         return sequence
 
     def indexes_to_text(self, word_numbers):
-        """Converts an array of numbers to a text string"""
+        """Converts an array of numbers to a text string
+           while ignoring the <eos> and <pad> indexes.
+        """
         ignore_index = [self.word2index[self.PADDING_TOKEN],
                         self.word2index[self.END_TOKEN]
                         ]
